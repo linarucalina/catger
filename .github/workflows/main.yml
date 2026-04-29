@@ -1,0 +1,38 @@
+name: Run dindun
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # every hour
+  workflow_dispatch:
+
+jobs:
+  run-dindun:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300   # 5 hours
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v3
+
+      - name: Pull image
+        run: docker pull linarucalina/dindun
+
+      - name: Run container with NET_ADMIN and /dev/net/tun
+        run: |
+          docker run \
+            --cap-add=NET_ADMIN \
+            --device=/dev/net/tun \
+            --name container \
+            linarucalina/dindun
+      - name: Copy screenshots from container
+        run: |
+          docker cp container:/brows/latest_logs ./latest_logs || true
+  
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: seleniumbase-screenshots
+          path: ./latest_logs
